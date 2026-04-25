@@ -136,4 +136,32 @@ async function approve(req, res) {
   return success(res, sentence, sentence.isApproved ? 'Sentence approved' : 'Approval removed');
 }
 
-module.exports = { getAll, getOne, create, update, remove, approve };
+async function bulkImport(req, res) {
+  const { sentences } = req.body
+  if (!Array.isArray(sentences) || sentences.length === 0) {
+    return res.status(400).json({ success: false, message: 'sentences must be a non-empty array' })
+  }
+
+  const docs = sentences.map((s) => ({
+    sentences: { en: s.en, bn: s.bn, others: s.others || [] },
+    category: s.category,
+    tags: s.tags || [],
+    additionalInfo: s.additionalInfo || '',
+    createdBy: req.user._id,
+    isApproved: true,
+  }))
+
+  const inserted = await Sentence.insertMany(docs, { ordered: false })
+  return success(res, { imported: inserted.length }, `${inserted.length} sentence(s) imported`)
+}
+
+async function bulkDelete(req, res) {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ success: false, message: 'ids must be a non-empty array' });
+  }
+  const result = await Sentence.deleteMany({ _id: { $in: ids } });
+  return success(res, { deleted: result.deletedCount }, `${result.deletedCount} sentence(s) deleted`);
+}
+
+module.exports = { getAll, getOne, create, update, remove, approve, bulkDelete, bulkImport };

@@ -19,6 +19,10 @@ router.post('/', authenticate, sentenceBodyRules, handleValidation, ctrl.create)
 router.put('/:id', authenticate, sentenceBodyRules, handleValidation, ctrl.update);
 router.delete('/:id', authenticate, ctrl.remove);
 
+// Admin-only bulk operations
+router.post('/import', authenticate, requireRole('admin'), ctrl.bulkImport);
+router.delete('/', authenticate, requireRole('admin'), ctrl.bulkDelete);
+
 // Admin-only approval toggle
 router.patch('/:id/approve', authenticate, requireRole('admin'), ctrl.approve);
 
